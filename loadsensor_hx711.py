@@ -1,5 +1,8 @@
+#!/usr/bin/env python
 import RPi.GPIO as GPIO
 import time
+import rospy
+from std_msgs.msg import Int8
 
 
 def createBoolList(size=8):
@@ -11,6 +14,8 @@ def createBoolList(size=8):
 
 class HX711:
     def __init__(self, dout, pd_sck, gain):
+        self.pub1 = rospy.Publisher('load', Int8 ,queue_size=3)
+
         self.PD_SCK = pd_sck
         self.DOUT = dout
 
@@ -92,7 +97,8 @@ class HX711:
 
     def get_units(self, times):
         weight = self.get_value(times) / self.SCALE
-        return round(weight,1)
+        self.weight = round(weight,1)
+        return self.weight
 
     def tare(self, times):
         sum = self.read_average(times)
@@ -110,8 +116,14 @@ class HX711:
 
     def power_up(self):
         GPIO.output(self.PD_SCK, False)
+
+    def publish(self):
+        self.pub1.publish(self.weight)       
+
         
 if __name__ == "__main__":
+    rospy.init_node('load_sensor')
+
     dout = 12		#RasPi pin No.
     pd_sck = 10
     gain = 128
@@ -123,9 +135,13 @@ if __name__ == "__main__":
     hx.set_scale(scale)
     hx.tare(times_tare)
 
-    while True:
+    rate = rospy.Rate(10)
+
+
+    while not rospy.is_shutdown():
         try:
             val = hx.get_units(times_base)
+            hx.publish()
             print "Weight : %s" % val
             #hx.power_down()
             #time.sleep(.001)
@@ -133,3 +149,5 @@ if __name__ == "__main__":
         except (KeyboardInterrupt, SystemExit):
             GPIO.cleanup()
             #sys.exit()
+
+        rate.sleep()
