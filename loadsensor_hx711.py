@@ -2,7 +2,7 @@
 import RPi.GPIO as GPIO
 import time
 import rospy
-from std_msgs.msg import Int8
+from std_msgs.msg import Float32
 
 
 def createBoolList(size=8):
@@ -14,7 +14,7 @@ def createBoolList(size=8):
 
 class HX711:
     def __init__(self, dout, pd_sck, gain):
-        self.pub1 = rospy.Publisher('load', Int8 ,queue_size=3)
+        self.pub1 = rospy.Publisher('load', Float32 ,queue_size=3)
 
         self.PD_SCK = pd_sck
         self.DOUT = dout
